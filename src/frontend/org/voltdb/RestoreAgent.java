@@ -1077,10 +1077,10 @@ SnapshotCompletionInterest, Promotable
             boolean inconsistent = false;
             Set<SnapshotInfo> fragments = e.getValue();
             for (SnapshotInfo s : fragments) {
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("SnapshotInfo " + s.nonce + " claims digest tables: " + s.digestTables);
-                    LOG.debug("SnapshotInfo " + s.nonce + " claims files for tables: " + s.fileTables);
-                }
+
+                LOG.info("SnapshotInfo " + s.nonce + " claims digest tables: " + s.digestTables);
+                LOG.info("SnapshotInfo " + s.nonce + " claims files for tables: " + s.fileTables);
+
                 if (digestTables == null) {
                     digestTables = new HashSet<String>(s.digestTables);
                 }
@@ -1097,6 +1097,7 @@ SnapshotCompletionInterest, Promotable
                 fileTables.addAll(s.fileTables);
                 if (totalPartitions == -1) {
                     totalPartitions = s.partitionCount;
+                    LOG.info("Set totalPartitions = " + s.partitionCount);
                 } else if (totalPartitions != s.partitionCount) {
                     m_snapshotErrLogStr.append("\nRejected snapshot ")
                                     .append(s.nonce)
