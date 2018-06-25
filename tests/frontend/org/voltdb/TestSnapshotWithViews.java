@@ -72,150 +72,151 @@ public class TestSnapshotWithViews extends TestExportBase {
         ExportTestClient.clear();
     }
 
-    public void testExportViewSnapshotRestore() throws Exception {
-        System.out.println("testExportViewSnapshotRestore");
-        Client client = getClient();
-
-        String[] ddls = {
-            "create stream ex partition on column i (i bigint not null)",
-            "create view v_ex (i, counti) AS select i, count(*) from ex group by i"
-        };
-
-        for (String ddl : ddls) {
-            client.callProcedure("@AdHoc", ddl);
-        }
-        int numValues=5000;
-        for (int i=0;i<numValues;i++) {
-            client.callProcedure("@AdHoc", "insert into ex values(" + i + ");");
-        }
-        client.drain();
-        waitForStreamedAllocatedMemoryZero(client);
-        ClientResponse response = client.callProcedure("@AdHoc", "select count(*) from v_ex");
-        assertEquals(response.getResults()[0].asScalarLong(), numValues);
-
-        client.callProcedure("@SnapshotSave", "/tmp/" + System.getProperty("user.name"), "testnonce", (byte) 1);
-
-        m_config.shutDown();
-        m_config.startUp(false);
-
-        System.out.println("Restart is done...........");
-        client = getClient();
-        for (String ddl : ddls) {
-            client.callProcedure("@AdHoc", ddl);
-        }
-
-        client.callProcedure("@SnapshotRestore", "/tmp/" + System.getProperty("user.name"), "testnonce");
-        System.out.println("Snapshot Restore is done...........");
-        response = client.callProcedure("@AdHoc", "select count(*) from v_ex");
-        assertEquals(response.getResults()[0].asScalarLong(), numValues);
-    }
-
-    public void testDeleteInExportViewSnapshotRestore() throws Exception {
-        System.out.println("testDeleteInExportViewSnapshotRestore");
-        Client client = getClient();
-
-        String[] ddls = {
-            "create stream ex partition on column i (i bigint not null)",
-            "create view v_ex (i, counti) AS select i, count(*) from ex group by i"
-        };
-
-        for (String ddl : ddls) {
-            client.callProcedure("@AdHoc", ddl);
-        }
-        StringBuilder insertSql;
-        for (int i=0;i<5000;i++) {
-            insertSql = new StringBuilder();
-            insertSql.append("insert into ex values(" + i + ");");
-            client.callProcedure("@AdHoc", insertSql.toString());
-        }
-        client.drain();
-        waitForStreamedAllocatedMemoryZero(client);
-        client.callProcedure("@AdHoc", "delete from v_ex where i = 0");
-        ClientResponse response = client.callProcedure("@AdHoc", "select count(*) from v_ex");
-        assertEquals(response.getResults()[0].asScalarLong(), 4999);
-
-        client.callProcedure("@SnapshotSave", "/tmp/" + System.getProperty("user.name"), "testnonce", (byte) 1);
-
-        m_config.shutDown();
-        m_config.startUp(false);
-
-        System.out.println("Restart is done...........");
-        client = getClient();
-        for (String ddl : ddls) {
-            client.callProcedure("@AdHoc", ddl);
-        }
-
-        client.callProcedure("@SnapshotRestore", "/tmp/" + System.getProperty("user.name"), "testnonce");
-        System.out.println("Snapshot Restore is done...........");
-        response = client.callProcedure("@AdHoc", "select count(*) from v_ex");
-        assertEquals(response.getResults()[0].asScalarLong(), 4999);
-    }
-
-    public void testUpdateInExportViewSnapshotRestore() throws Exception {
-        System.out.println("testUpdateInExportViewSnapshotRestore");
-        Client client = getClient();
-
-        String[] ddls = {
-            "create stream ex partition on column i (i bigint not null)",
-            "create view v_ex (i, counti) AS select i, count(*) from ex group by i",
-        };
-
-        for (String ddl : ddls) {
-            client.callProcedure("@AdHoc", ddl);
-        }
-        client.callProcedure("@AdHoc", "insert into ex values(0)");
-        client.drain();
-        waitForStreamedAllocatedMemoryZero(client);
-        client.callProcedure("@AdHoc", "update v_ex set counti = 10");
-        ClientResponse response = client.callProcedure("@AdHoc", "select counti from v_ex");
-        assertEquals(response.getResults()[0].asScalarLong(), 10);
-
-        client.callProcedure("@SnapshotSave", "/tmp/" + System.getProperty("user.name"), "testnonce", (byte) 1);
-
-        m_config.shutDown();
-        m_config.startUp(false);
-
-        System.out.println("Restart is done...........");
-        client = getClient();
-        for (String ddl : ddls) {
-            client.callProcedure("@AdHoc", ddl);
-        }
-
-        client.callProcedure("@SnapshotRestore", "/tmp/" + System.getProperty("user.name"), "testnonce");
-        System.out.println("Snapshot Restore is done...........");
-        response = client.callProcedure("@AdHoc", "select counti from v_ex");
-        assertEquals(response.getResults()[0].asScalarLong(), 10);
-    }
+//    public void testExportViewSnapshotRestore() throws Exception {
+//        System.out.println("testExportViewSnapshotRestore");
+//        Client client = getClient();
+//
+//        String[] ddls = {
+//            "create stream ex partition on column i (i bigint not null)",
+//            "create view v_ex (i, counti) AS select i, count(*) from ex group by i"
+//        };
+//
+//        for (String ddl : ddls) {
+//            client.callProcedure("@AdHoc", ddl);
+//        }
+//        int numValues=5000;
+//        for (int i=0;i<numValues;i++) {
+//            client.callProcedure("@AdHoc", "insert into ex values(" + i + ");");
+//        }
+//        client.drain();
+//        waitForStreamedAllocatedMemoryZero(client);
+//        ClientResponse response = client.callProcedure("@AdHoc", "select count(*) from v_ex");
+//        assertEquals(response.getResults()[0].asScalarLong(), numValues);
+//
+//        client.callProcedure("@SnapshotSave", "/tmp/" + System.getProperty("user.name"), "testnonce", (byte) 1);
+//
+//        m_config.shutDown();
+//        m_config.startUp(false);
+//
+//        System.out.println("Restart is done...........");
+//        client = getClient();
+//        for (String ddl : ddls) {
+//            client.callProcedure("@AdHoc", ddl);
+//        }
+//
+//        client.callProcedure("@SnapshotRestore", "/tmp/" + System.getProperty("user.name"), "testnonce");
+//        System.out.println("Snapshot Restore is done...........");
+//        response = client.callProcedure("@AdHoc", "select count(*) from v_ex");
+//        assertEquals(response.getResults()[0].asScalarLong(), numValues);
+//    }
+//
+//    public void testDeleteInExportViewSnapshotRestore() throws Exception {
+//        System.out.println("testDeleteInExportViewSnapshotRestore");
+//        Client client = getClient();
+//
+//        String[] ddls = {
+//            "create stream ex partition on column i (i bigint not null)",
+//            "create view v_ex (i, counti) AS select i, count(*) from ex group by i"
+//        };
+//
+//        for (String ddl : ddls) {
+//            client.callProcedure("@AdHoc", ddl);
+//        }
+//        StringBuilder insertSql;
+//        for (int i=0;i<5000;i++) {
+//            insertSql = new StringBuilder();
+//            insertSql.append("insert into ex values(" + i + ");");
+//            client.callProcedure("@AdHoc", insertSql.toString());
+//        }
+//        client.drain();
+//        waitForStreamedAllocatedMemoryZero(client);
+//        client.callProcedure("@AdHoc", "delete from v_ex where i = 0");
+//        ClientResponse response = client.callProcedure("@AdHoc", "select count(*) from v_ex");
+//        assertEquals(response.getResults()[0].asScalarLong(), 4999);
+//
+//        client.callProcedure("@SnapshotSave", "/tmp/" + System.getProperty("user.name"), "testnonce", (byte) 1);
+//
+//        m_config.shutDown();
+//        m_config.startUp(false);
+//
+//        System.out.println("Restart is done...........");
+//        client = getClient();
+//        for (String ddl : ddls) {
+//            client.callProcedure("@AdHoc", ddl);
+//        }
+//
+//        client.callProcedure("@SnapshotRestore", "/tmp/" + System.getProperty("user.name"), "testnonce");
+//        System.out.println("Snapshot Restore is done...........");
+//        response = client.callProcedure("@AdHoc", "select count(*) from v_ex");
+//        assertEquals(response.getResults()[0].asScalarLong(), 4999);
+//    }
+//
+//    public void testUpdateInExportViewSnapshotRestore() throws Exception {
+//        System.out.println("testUpdateInExportViewSnapshotRestore");
+//        Client client = getClient();
+//
+//        String[] ddls = {
+//            "create stream ex partition on column i (i bigint not null)",
+//            "create view v_ex (i, counti) AS select i, count(*) from ex group by i",
+//        };
+//
+//        for (String ddl : ddls) {
+//            client.callProcedure("@AdHoc", ddl);
+//        }
+//        client.callProcedure("@AdHoc", "insert into ex values(0)");
+//        client.drain();
+//        waitForStreamedAllocatedMemoryZero(client);
+//        client.callProcedure("@AdHoc", "update v_ex set counti = 10");
+//        ClientResponse response = client.callProcedure("@AdHoc", "select counti from v_ex");
+//        assertEquals(response.getResults()[0].asScalarLong(), 10);
+//
+//        client.callProcedure("@SnapshotSave", "/tmp/" + System.getProperty("user.name"), "testnonce", (byte) 1);
+//
+//        m_config.shutDown();
+//        m_config.startUp(false);
+//
+//        System.out.println("Restart is done...........");
+//        client = getClient();
+//        for (String ddl : ddls) {
+//            client.callProcedure("@AdHoc", ddl);
+//        }
+//
+//        client.callProcedure("@SnapshotRestore", "/tmp/" + System.getProperty("user.name"), "testnonce");
+//        System.out.println("Snapshot Restore is done...........");
+//        response = client.callProcedure("@AdHoc", "select counti from v_ex");
+//        assertEquals(response.getResults()[0].asScalarLong(), 10);
+//    }
 
     public void testSingledTableViewMergeAfterSnapshotRestore() throws Exception {
         System.out.println("testSingledTableViewMergeAfterSnapshotRestore");
         Client client = getClient();
-
         String[] ddls = {
-            "create table ex1 (i bigint not null, j bigint not null)",
-            "partition table ex1 on column i",
-            "create view v_ex_p (i, counti) AS select i, count(*) from ex1 group by i",
+            "CREATE TABLE partitionedTable (i BIGINT NOT NULL, j BIGINT NOT NULL)",
+            "PARTITION TABLE partitionedTable ON COLUMN i",
+            // partitioned view
+            "CREATE VIEW vPartitioned (i, counti) AS SELECT i, count(*) FROM partitionedTable GROUP BY i",
             // randomly partitioned view
-            "create view v_ex_np (j, countj) AS select j, count(*) from ex1 group by j"
+            "CREATE VIEW vRandPartitioned (j, countj) AS SELECT j, count(*) FROM partitionedTable GROUP BY j",
+            // test view without COUNT(*) - ENG-10892
+            "CREATE VIEW vNoCountStar (i, sumi) as SELECT i, sum(j) FROM partitionedTable GROUP BY i"
         };
 
+        // Initialize the database and the sample data.
         for (String ddl : ddls) {
             client.callProcedure("@AdHoc", ddl);
         }
-        StringBuilder insertSql;
-        for (int i=0;i<5000;i++) {
-            insertSql = new StringBuilder();
-            insertSql.append("insert into ex1 values(" + i + ", " + (5000-i) + ");");
-            client.callProcedure("@AdHoc", insertSql.toString());
+        for (int i = 0; i < 500; i++) {
+            client.callProcedure("@AdHoc",
+                    "INSERT INTO partitionedTable VALUES (" + i + ", " + (500-i) + ");");
         }
         client.drain();
-        ClientResponse response = client.callProcedure("@AdHoc", "select count(*) from v_ex_p");
-        assertEquals(response.getResults()[0].asScalarLong(), 5000);
-        response = client.callProcedure("@AdHoc", "select count(*) from v_ex_np");
-        assertEquals(response.getResults()[0].asScalarLong(), 5000);
+
+        ClientResponse response = client.callProcedure("@AdHoc", "SELECT COUNT(*) FROM vPartitioned");
+        assertEquals(response.getResults()[0].asScalarLong(), 500);
+        response = client.callProcedure("@AdHoc", "SELECT COUNT(*) FROM vRandPartitioned");
+        assertEquals(response.getResults()[0].asScalarLong(), 500);
 
         client.callProcedure("@SnapshotSave", "/tmp/" + System.getProperty("user.name"), "testnonce", (byte) 1);
-
         m_config.shutDown();
         m_config.startUp(false);
 
@@ -224,79 +225,104 @@ public class TestSnapshotWithViews extends TestExportBase {
         for (String ddl : ddls) {
             client.callProcedure("@AdHoc", ddl);
         }
-        for (int i=0;i<1000;i++) {
-            insertSql = new StringBuilder();
-            insertSql.append("insert into ex1 values(" + i + ", " + (5000-i) + ");");
-            client.callProcedure("@AdHoc", insertSql.toString());
+        // Only insert 100 rows this time.
+        for (int i = 0; i < 100; i++) {
+            client.callProcedure("@AdHoc",
+                    "INSERT INTO partitionedTable VALUES (" + i + ", " + (500-i) + ");");
         }
 
         client.callProcedure("@SnapshotRestore", "/tmp/" + System.getProperty("user.name"), "testnonce");
         System.out.println("Snapshot Restore is done...........");
-        VoltTable resultTable = client.callProcedure("@AdHoc", "select * from v_ex_p order by 1;").getResults()[0];
-        assertEquals(resultTable.getRowCount(), 5000);
-        // Check that for the partitioned single table view, the view content is correctly merged after snapshot restore.
-        for (int i = 0; i < 1000; i++) {
+
+        // Check that for the partitioned single table view,
+        // the view content is correctly merged after snapshot restore.
+        VoltTable resultTable = client.callProcedure("@AdHoc",
+                "SELECT * FROM vPartitioned ORDER BY 1;").getResults()[0];
+        assertEquals(resultTable.getRowCount(), 500);
+        for (int i = 0; i < 100; i++) {
             assertTrue(resultTable.advanceRow());
             assertEquals(2L, resultTable.getLong(1));
         }
-        for (int i = 0; i < 4000; i++) {
+        for (int i = 0; i < 400; i++) {
             assertTrue(resultTable.advanceRow());
             assertEquals(1L, resultTable.getLong(1));
         }
-        resultTable = client.callProcedure("@AdHoc", "select count(*) from v_ex_np").getResults()[0];
-        assertEquals(resultTable.asScalarLong(), 5000);
+
+        resultTable = client.callProcedure("@AdHoc",
+                "SELECT COUNT(*) FROM vRandPartitioned").getResults()[0];
+        assertEquals(resultTable.asScalarLong(), 500);
+
+        // Check the partitioned single table view without COUNT(*),
+        // the view content should be merged correctly.
+        resultTable = client.callProcedure("@AdHoc",
+                "SELECT * FROM vNoCountStar ORDER BY 1;").getResults()[0];
+        assertEquals(resultTable.getRowCount(), 500);
+        for (int i = 0; i < 100; i++) {
+            assertTrue(resultTable.advanceRow());
+            assertEquals(1000 - 2 * i, resultTable.getLong(1));
+        }
+        for (int i = 100; i < 500; i++) {
+            assertTrue(resultTable.advanceRow());
+            assertEquals(500 - i, resultTable.getLong(1));
+        }
+        String checkerQuery = "SELECT sumi FROM vNoCountStar WHERE i = 0;";
+        String deleteQuery = "DELETE FROM partitionedTable WHERE i = 0 LIMIT 1;";
+        assertSuccessfulDML(client, deleteQuery);
+        assertEquals(500, client.callProcedure("@AdHoc", checkerQuery).getResults()[0].asScalarLong());
+        assertSuccessfulDML(client, deleteQuery);
+        assertEquals(0, client.callProcedure("@AdHoc", checkerQuery).getResults()[0].getRowCount());
     }
 
-    public void testJoinedTableViewAfterSnapshotRestore() throws Exception {
-        System.out.println("testJoinedTableViewSnapshotRestore");
-        Client client = getClient();
-
-        String[] ddls = {
-            "create table ex1 (i bigint not null, j bigint not null)",
-            "create table ex2 (i bigint not null)",
-            "partition table ex1 on column i",
-            "partition table ex2 on column i",
-            "create view v_ex (i, counti) AS select ex1.i, count(*) from ex1 join ex2 on ex1.i=ex2.i group by ex1.i",
-            // randomly partitioned joined view
-            "create view v_ex_np (j, countj) AS select ex1.j, count(*) from ex1 join ex2 on ex1.i=ex2.i group by ex1.j"
-        };
-
-        for (String ddl : ddls) {
-            client.callProcedure("@AdHoc", ddl);
-        }
-        StringBuilder insertSql;
-        for (int i=0;i<5000;i++) {
-            insertSql = new StringBuilder();
-            insertSql.append("insert into ex1 values(" + i + ", " + (5000-i) + ");");
-            client.callProcedure("@AdHoc", insertSql.toString());
-            insertSql.append("insert into ex2 values(" + i + ");");
-            client.callProcedure("@AdHoc", insertSql.toString());
-        }
-        client.drain();
-        waitForStreamedAllocatedMemoryZero(client);
-        ClientResponse response = client.callProcedure("@AdHoc", "select count(*) from v_ex");
-        assertEquals(response.getResults()[0].asScalarLong(), 5000);
-        response = client.callProcedure("@AdHoc", "select count(*) from v_ex_np");
-        assertEquals(response.getResults()[0].asScalarLong(), 5000);
-
-        client.callProcedure("@SnapshotSave", "/tmp/" + System.getProperty("user.name"), "testnonce", (byte) 1);
-
-        m_config.shutDown();
-        m_config.startUp(false);
-
-        System.out.println("Restart is done...........");
-        client = getClient();
-        for (String ddl : ddls) {
-            client.callProcedure("@AdHoc", ddl);
-        }
-
-        client.callProcedure("@SnapshotRestore", "/tmp/" + System.getProperty("user.name"), "testnonce");
-        System.out.println("Snapshot Restore is done...........");
-        response = client.callProcedure("@AdHoc", "select count(*) from v_ex");
-        assertEquals(response.getResults()[0].asScalarLong(), 5000);
-        response = client.callProcedure("@AdHoc", "select count(*) from v_ex_np");
-        assertEquals(response.getResults()[0].asScalarLong(), 5000);
-    }
+//    public void testJoinedTableViewAfterSnapshotRestore() throws Exception {
+//        System.out.println("testJoinedTableViewSnapshotRestore");
+//        Client client = getClient();
+//
+//        String[] ddls = {
+//            "create table ex1 (i bigint not null, j bigint not null)",
+//            "create table ex2 (i bigint not null)",
+//            "partition table ex1 on column i",
+//            "partition table ex2 on column i",
+//            "create view v_ex (i, counti) AS select ex1.i, count(*) from ex1 join ex2 on ex1.i=ex2.i group by ex1.i",
+//            // randomly partitioned joined view
+//            "create view v_ex_np (j, countj) AS select ex1.j, count(*) from ex1 join ex2 on ex1.i=ex2.i group by ex1.j"
+//        };
+//
+//        for (String ddl : ddls) {
+//            client.callProcedure("@AdHoc", ddl);
+//        }
+//        StringBuilder insertSql;
+//        for (int i = 0; i < 500; i++) {
+//            insertSql = new StringBuilder();
+//            insertSql.append("insert into ex1 values(" + i + ", " + (500-i) + ");");
+//            client.callProcedure("@AdHoc", insertSql.toString());
+//            insertSql.append("insert into ex2 values(" + i + ");");
+//            client.callProcedure("@AdHoc", insertSql.toString());
+//        }
+//        client.drain();
+//        waitForStreamedAllocatedMemoryZero(client);
+//        ClientResponse response = client.callProcedure("@AdHoc", "select count(*) from v_ex");
+//        assertEquals(response.getResults()[0].asScalarLong(), 500);
+//        response = client.callProcedure("@AdHoc", "select count(*) from v_ex_np");
+//        assertEquals(response.getResults()[0].asScalarLong(), 500);
+//
+//        client.callProcedure("@SnapshotSave", "/tmp/" + System.getProperty("user.name"), "testnonce", (byte) 1);
+//
+//        m_config.shutDown();
+//        m_config.startUp(false);
+//
+//        System.out.println("Restart is done...........");
+//        client = getClient();
+//        for (String ddl : ddls) {
+//            client.callProcedure("@AdHoc", ddl);
+//        }
+//
+//        client.callProcedure("@SnapshotRestore", "/tmp/" + System.getProperty("user.name"), "testnonce");
+//        System.out.println("Snapshot Restore is done...........");
+//        response = client.callProcedure("@AdHoc", "select count(*) from v_ex");
+//        assertEquals(response.getResults()[0].asScalarLong(), 500);
+//        response = client.callProcedure("@AdHoc", "select count(*) from v_ex_np");
+//        assertEquals(response.getResults()[0].asScalarLong(), 500);
+//    }
 
     public TestSnapshotWithViews(final String name) {
         super(name);

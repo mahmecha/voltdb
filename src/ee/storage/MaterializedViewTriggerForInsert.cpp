@@ -180,6 +180,14 @@ void MaterializedViewTriggerForInsert::mergeTupleForInsert(const TableTuple &del
         }
         m_updatedTuple.setNValue(columnIndex, newValue);
     }
+    // If there is a hidden column for storing COUNT(*) in the view, we need to update the value for it.
+    // DR tables also use hidden columns in its schema. But materialized views cannot be DRed.
+    if (m_dest->schema()->hiddenColumnCount() == 1) {
+        NValue existingValue = m_existingTuple.getHiddenNValue(0);
+        NValue newValue = deltaTuple.getHiddenNValue(0);
+        newValue = existingValue.op_add(newValue);
+        m_updatedTuple.setHiddenNValue(0, newValue);
+    }
 }
 
 void MaterializedViewTriggerForInsert::initUpdatableIndexList() {
