@@ -209,6 +209,8 @@ public class VoltCompiler {
     // Also causes explain plans on disk to include cost.
     public final static boolean DEBUG_MODE
       = Boolean.valueOf(System.getProperty("org.voltdb.compilerdebug", "false"));
+    public final static double LARGE_TEMP_TABLE_FRACTION
+      = Double.valueOf(System.getProperty("org.voltdb.large_temp_table_fraction", "0.0"));
 
     // was this voltcompiler instantiated in a main(), or as part of VoltDB
     public final boolean standaloneCompiler;

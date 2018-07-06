@@ -17,10 +17,7 @@
 
 package org.voltdb.planner;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -49,6 +46,52 @@ import org.voltdb.types.ConstraintType;
  *
  */
 public class QueryPlanner implements AutoCloseable {
+    private static Random m_rnd;
+    /**
+     * Make a thread-safe random number used by this class to decide
+     * whether a plan is an LTT class.  See getNextDouble below.
+     */
+    private static Random getRandom() {
+        if (m_rnd == null) {
+            m_rnd = new Random();
+        }
+        return m_rnd;
+    }
+
+    /**
+     * Return true iff this should be a large temp table query.
+     * We use this for testing.  The result depends on the
+     * setting for {@link org.voltdb.compiler.VoltCompiler}.LARGE_TEMP_TABLE_FRACTION,
+     * which is by default equal to 0.0.  We choose a
+     * uniformly distributed random number in the interval [0,1]
+     * and round it to the nearest multiple of 0.1.  If this
+     * number is greater than {@link org.voltdb.compiler.VoltCompiler}.LARGE_TEMP_TABLE_FRACTION,
+     * then this will be large temp table query.
+     *
+     * We hard wire this to false if {@link org.voltdb.compiler.VoltCompiler}.LARGE_TEMP_TABLE_FRACTION
+     * is less than 0.1, to avoid numerical errors.
+     *
+     * @return whether to force a large temp table query.
+     */
+    private static boolean isLargeTempTableForTesting() {
+        double alpha = VoltCompiler.LARGE_TEMP_TABLE_FRACTION;
+
+        // The boundaries are problematic.  If alpha == 0,
+        // we want to return false always, and if alpha == 1.0
+        // we want to return true always.  So don't do any
+        // random number generation, just return what we want.
+        if (alpha == 0.0) {
+            return false;
+        } else if (alpha == 1.0) {
+            return true;
+        }
+        // Round the next random double to the nearest
+        // multiple of 0.1.
+        double d = Math.round(getRandom.nextDouble()*10.0)/10.0;
+        return (d < alpha);
+    }
+
+
     private String m_sql;
     private String m_stmtName;
     private String m_procName;

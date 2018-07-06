@@ -17,15 +17,8 @@
 
 package org.voltdb.planner;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.NavigableSet;
-import java.util.Set;
 
 import org.json_voltpatches.JSONException;
 import org.voltcore.utils.Pair;
@@ -37,6 +30,7 @@ import org.voltdb.catalog.Constraint;
 import org.voltdb.catalog.Database;
 import org.voltdb.catalog.Index;
 import org.voltdb.catalog.Table;
+import org.voltdb.compiler.VoltCompiler;
 import org.voltdb.expressions.AbstractExpression;
 import org.voltdb.expressions.AggregateExpression;
 import org.voltdb.expressions.ConstantValueExpression;
@@ -171,6 +165,7 @@ public class PlanAssembler {
         m_catalogDb = catalogDb;
         m_partitioning = partitioning;
         m_planSelector = planSelector;
+        double frac = VoltCompiler.LARGE_TEMP_TABLE_FRACTION;
         m_isLargeQuery = isLargeQuery;
     }
 
